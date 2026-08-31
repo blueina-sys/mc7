@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MC7=8 정보공유</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --bg:#FBFAF8; --surface:#FFFFFF; --ink:#211C18; --muted:#8C837A;
+    --line:#ECE7E0; --line2:#F4F0EA;
+    --brand:#C84B2F; --brand-soft:#FBEDE8;
+    --park:#2F6DB0; --park-soft:#E9F0F8;
+    --food:#C24A2C; --food-soft:#FBEBE6;
+    --cafe:#3B8A76; --cafe-soft:#E7F3EF;
+    --shadow:0 1px 2px rgba(33,28,24,.04), 0 8px 24px rgba(33,28,24,.06);
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Pretendard','Pretendard Variable',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    background:var(--bg); color:var(--ink);
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+    display:flex; justify-content:center;
+  }
+  .phone{
+    width:100%; max-width:460px; background:var(--bg);
+    position:relative; display:flex; flex-direction:column;
+    box-shadow:0 0 0 1px var(--line);
+  }
+  @media(min-width:520px){
+    .phone{ margin:24px 0; height:calc(100vh - 48px); border-radius:24px; overflow:hidden; }
+    .phone .list, .phone .detail{ overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  }
+
+  .app-head{padding:22px 20px 16px; background:var(--surface); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20;}
+  .brand-row{display:flex; align-items:center; gap:9px; margin-bottom:3px}
+  .brand-mark{width:26px;height:26px;border-radius:8px;background:var(--brand);display:grid;place-items:center;flex:none;}
+  .brand-mark svg{width:15px;height:15px}
+  .app-title{font-size:18px; font-weight:800; letter-spacing:-.02em}
+  .head-right{margin-left:auto;display:flex;align-items:center;gap:4px}
+  .refresh{background:none;border:0;color:var(--muted);cursor:pointer;padding:5px;border-radius:8px;display:grid;place-items:center;font-family:inherit}
+  .refresh:hover{background:var(--bg);color:var(--ink)}
+  .refresh svg{width:18px;height:18px}
+  .refresh.spin svg{animation:sp .8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .app-sub{font-size:12.5px; color:var(--muted); margin-left:35px; margin-top:-2px}
+
+  .search{margin-top:16px; display:flex; align-items:center; gap:9px; background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:11px 13px;}
+  .search:focus-within{border-color:var(--brand); background:var(--surface)}
+  .search svg{width:17px;height:17px;color:var(--muted);flex:none}
+  .search input{border:0;background:transparent;outline:0;font-size:15px;width:100%;font-family:inherit;color:var(--ink)}
+  .search input::placeholder{color:var(--muted)}
+
+  .tabs{display:flex; gap:7px; margin-top:12px}
+  .tab{font-size:13.5px; font-weight:600; color:var(--muted); padding:7px 14px; border-radius:999px; border:1px solid var(--line); background:var(--surface); cursor:pointer; transition:.15s; font-family:inherit;}
+  .tab.on{background:var(--ink); color:#fff; border-color:var(--ink)}
+
+  .list{padding:14px 16px 100px; flex:1}
+  .list-meta{font-size:12.5px;color:var(--muted);padding:2px 4px 10px}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:11px; cursor:pointer; transition:.15s; box-shadow:var(--shadow);}
+  .card:active{transform:scale(.99)}
+  .card:hover{border-color:#DFD8CF}
+  .card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:12px}
+  .school-name{font-size:16.5px; font-weight:700; letter-spacing:-.01em}
+  .school-meta{font-size:12.5px; color:var(--muted); margin-top:3px}
+  .chev{color:#CFC7BC;flex:none;margin-top:3px}
+  .chev svg{width:18px;height:18px}
+  .badges{display:flex; gap:6px; margin-top:13px; flex-wrap:wrap}
+  .badge{display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; padding:5px 9px; border-radius:8px;}
+  .badge svg{width:13px;height:13px}
+  .b-park{background:var(--park-soft); color:var(--park)}
+  .b-food{background:var(--food-soft); color:var(--food)}
+  .b-empty{background:var(--line2); color:var(--muted); font-weight:500}
+
+  .detail{display:none; flex-direction:column; flex:1}
+  .detail.on{display:flex}
+  .list.off{display:none}
+  .app-head.off{display:none}
+  .d-head{padding:16px 16px 18px; background:var(--surface); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20;}
+  .back{display:inline-flex; align-items:center; gap:5px; background:none; border:0; color:var(--muted); font-size:14px; font-weight:600; cursor:pointer; padding:4px 0; margin-bottom:12px; font-family:inherit;}
+  .back svg{width:17px;height:17px}
+  .d-name{font-size:22px; font-weight:800; letter-spacing:-.02em}
+  .d-meta{font-size:13px; color:var(--muted); margin-top:5px}
+  .d-body{padding:18px 16px 110px}
+
+  .sec-head{display:flex; align-items:center; gap:8px; margin:6px 2px 12px}
+  .sec-head .ic{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none}
+  .sec-head .ic svg{width:15px;height:15px}
+  .ic-park{background:var(--park-soft);color:var(--park)}
+  .ic-food{background:var(--food-soft);color:var(--food)}
+  .sec-title{font-size:15.5px;font-weight:700}
+  .sec-count{font-size:12.5px;color:var(--muted);font-weight:600}
+  .section{margin-bottom:26px}
+
+  .entry{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 15px; margin-bottom:10px;}
+  .entry-line{font-size:14.5px; font-weight:600; margin-bottom:2px}
+  .entry-tip{font-size:13.5px; color:#5C554D; line-height:1.55}
+  .store-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+  .store-name{font-size:15px;font-weight:700}
+  .type-tag{font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px}
+  .t-food{background:var(--food-soft);color:var(--food)}
+  .t-cafe{background:var(--cafe-soft);color:var(--cafe)}
+  .kv{font-size:13px;color:#5C554D;margin-top:3px}
+  .kv b{font-weight:600;color:var(--ink)}
+  .quote{font-size:13.5px;color:#5C554D;margin-top:7px;padding-left:10px;border-left:2px solid var(--line);line-height:1.5}
+
+  .maplink{display:inline-flex;align-items:center;gap:6px;margin-top:11px; font-size:13px;font-weight:600;color:var(--ink); background:var(--bg);border:1px solid var(--line);border-radius:9px; padding:8px 12px;text-decoration:none;}
+  .maplink:hover{border-color:var(--brand);color:var(--brand)}
+  .maplink svg{width:14px;height:14px}
+  .photo-link{display:inline-flex;align-items:center;gap:6px;margin-top:9px;margin-left:8px;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none}
+  .photo-link:hover{color:var(--brand)}
+  .photo-link svg{width:14px;height:14px}
+  .park-photo{margin-top:11px;width:100%;max-height:260px;object-fit:cover;border-radius:10px;border:1px solid var(--line);display:block}
+
+  .author{display:flex;align-items:center;gap:6px;margin-top:12px;font-size:12px;color:var(--muted)}
+  .dot{width:20px;height:20px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-size:10px;font-weight:700;flex:none}
+
+  .empty{text-align:center;padding:26px 20px;background:var(--surface); border:1px dashed var(--line);border-radius:14px;color:var(--muted);}
+  .empty b{display:block;color:var(--ink);font-size:14.5px;font-weight:700;margin-bottom:4px}
+  .empty span{font-size:13px}
+
+  .fab{position:fixed;bottom:22px;left:50%;transform:translateX(-50%); background:var(--brand);color:#fff;border:0;border-radius:999px; padding:14px 22px;font-size:14.5px;font-weight:700;font-family:inherit; display:flex;align-items:center;gap:8px;cursor:pointer; box-shadow:0 6px 20px rgba(200,75,47,.35);z-index:30;}
+  .fab svg{width:17px;height:17px}
+  .addbtn svg{width:20px;height:20px;flex:none}
+  @media(min-width:520px){ .fab{position:absolute} }
+
+  /* 상태 표시 */
+  .state{padding:60px 30px;text-align:center;color:var(--muted)}
+  .state .sp{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;margin:0 auto 16px;animation:sp .8s linear infinite}
+  .state b{display:block;color:var(--ink);font-size:15px;font-weight:700;margin-bottom:6px}
+  .state span{font-size:13px;line-height:1.6}
+  .state .retry{margin-top:16px;background:var(--ink);color:#fff;border:0;border-radius:10px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+  .note{font-size:11.5px;color:#B4AA9E;text-align:center;padding:0 20px 6px}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <header class="app-head" id="listHead">
+    <div class="brand-row">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <div class="app-title">MC7=8 정보공유</div>
+      <div class="head-right">
+        <button class="refresh" id="refresh" title="새로고침">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="app-sub">제주 SW미래채움 7기 · 주차와 맛집을 한곳에</div>
+
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="q" type="text" placeholder="학교 이름 검색" autocomplete="off">
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-f="all">전체</button>
+      <button class="tab" data-f="초등학교">초등학교</button>
+      <button class="tab" data-f="중학교">중학교</button>
+    </div>
+  </header>
+
+  <main class="list" id="list"></main>
+
+  <section class="detail" id="detail">
+    <div class="d-head">
+      <button class="back" id="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        목록으로
+      </button>
+      <div class="d-name" id="dName"></div>
+      <div class="d-meta" id="dMeta"></div>
+    </div>
+    <div class="d-body" id="dBody"></div>
+  </section>
+
+  <button class="fab" id="fab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    정보 추가
+  </button>
+</div>
+
+<script>
+/* ========== 설정 ========== */
+const SHEET_ID = '1vKOtOGwO5qT_qn_UlmZbbFiZg8OQ1gwJTEL-Bc46wQA';
+// 구글 폼 응답이 쌓이는 탭 이름 (폼과 연결된 탭)
+const TAB = { schools:'학교목록', parking:'주차응답', food:'맛집응답', teachers:'강사매칭' };
+// 구글 폼 주소 — 여기에 넣으면 '정보 추가' 버튼이 해당 폼을 엽니다.
+const FORM_PARKING = 'https://docs.google.com/forms/d/e/1FAIpQLSe0fj1KmvTl650rgdjADz4bi5HwKEc9gALu8s60C7nVK8edwA/viewform'; // 주차 정보 입력 폼 주소
+const FORM_FOOD = 'https://docs.google.com/forms/d/e/1FAIpQLSd0cxkAQ38glYjOxUJ432AY2POP2G9S291maSUcljMQFJlVQQ/viewform';    // 맛집·카페 정보 입력 폼 주소
+const SKIP_EMAILS = []; // 자동 제외할 이메일(있으면)
+
+const IC = {
+  park:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>',
+  food:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7a3 3 0 0 0 3 3v10M6 2v6M9 2v6M18 2a4 4 0 0 0-4 4v6h4M18 12v10"/></svg>',
+  map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.5 2.5V6L9 3.5m0 16.5 6 2.5m-6-19 6 2.5M15 22l5.5-2.5V3.5L15 6m0 16V6"/></svg>',
+  photo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>'
+};
+
+/* ========== 유틸 ========== */
+function gvizURL(sheetName){
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+}
+// CSV 파서 (따옴표·줄바꿈 처리)
+function parseCSV(text){
+  const rows=[]; let row=[], cur='', q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){
+      if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; }
+      else cur+=c;
+    }else{
+      if(c==='"') q=true;
+      else if(c===','){ row.push(cur); cur=''; }
+      else if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; }
+      else if(c==='\r'){ /* skip */ }
+      else cur+=c;
+    }
+  }
+  if(cur!==''||row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+// 헤더 행 찾기 (특정 헤더 토큰이 들어있는 행) → {idx, cols}
+function findHeader(rows, token){
+  for(let i=0;i<rows.length;i++){
+    const cells=rows[i].map(x=>(x||'').trim());
+    if(cells.includes(token)) return {idx:i, cols:cells};
+  }
+  return null;
+}
+function colIndex(cols, name){ return cols.findIndex(c=>c.replace(/\s/g,'')===name.replace(/\s/g,'')); }
+function fmtDate(s){
+  if(!s) return '';
+  const str=String(s).trim();
+  // 구글 폼: "2026. 8. 30 오후 7:55:25"
+  let m=str.match(/(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/);
+  if(m) return `${+m[2]}/${+m[3]}`;
+  // ISO: "2026-08-30 09:14"
+  m=str.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return `${+m[2]}/${+m[3]}`;
+  return str.split(' ')[0];
+}
+async function fetchTab(sheetName, headerToken){
+  const res=await fetch(gvizURL(sheetName), {cache:'no-store'});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const txt=await res.text();
+  const rows=parseCSV(txt);
+  const h=findHeader(rows, headerToken);
+  if(!h) throw new Error('헤더 '+headerToken+' 없음');
+  return { cols:h.cols, data:rows.slice(h.idx+1) };
+}
+
+/* ========== 데이터 로드 ========== */
+let SCHOOLS=[];
+async function loadData(){
+  showState('loading');
+
+  const [sc, pk, fd, tc] = await Promise.all([
+    fetchTab(TAB.schools,'학교ID'),
+    fetchTab(TAB.parking,'주차 위치 설명'),
+    fetchTab(TAB.food,'가게명'),
+    fetchTab(TAB.teachers,'이메일')
+  ]);
+
+  // 강사 이메일 → 이름
+  const ti=colIndex(tc.cols,'이메일'), tn=colIndex(tc.cols,'강사이름');
+  const nameByEmail={};
+  tc.data.forEach(r=>{ const e=(r[ti]||'').trim().toLowerCase(); if(e) nameByEmail[e]=(r[tn]||'').trim()||e; });
+  const authorName=e=>{ const k=(e||'').trim().toLowerCase(); return nameByEmail[k]|| (e? e.split('@')[0]:'익명'); };
+  const skip=e=>SKIP_EMAILS.includes((e||'').trim().toLowerCase());
+
+  // 학교 (학교명으로 연결)
+  const sId=colIndex(sc.cols,'학교ID'), sN=colIndex(sc.cols,'학교명'),
+        sT=colIndex(sc.cols,'구분'), sR=colIndex(sc.cols,'지역'), sA=colIndex(sc.cols,'주소');
+  const byName={};
+  SCHOOLS = sc.data.filter(r=>(r[sN]||'').trim()).map(r=>{
+    const o={ id:(r[sId]||'').trim(), name:(r[sN]||'').trim(), type:(r[sT]||'').trim(),
+              region:(r[sR]||'').trim(), addr:(r[sA]||'').trim(), parking:[], food:[] };
+    byName[o.name]=o; return o;
+  });
+
+  // 주차응답 (폼 → 학교명으로 연결)
+  const pS=colIndex(pk.cols,'학교'), pD=colIndex(pk.cols,'주차 위치 설명'),
+        pT=colIndex(pk.cols,'주차 팁'), pL=colIndex(pk.cols,'주차 지도 링크'),
+        pP=colIndex(pk.cols,'주차 위치 사진'), pBy=colIndex(pk.cols,'이메일 주소'), pDt=colIndex(pk.cols,'타임스탬프');
+  pk.data.forEach(r=>{
+    const nm=(r[pS]||'').trim(); if(!nm||!byName[nm]) return;
+    const by=r[pBy]||''; if(skip(by)) return;
+    if(!(r[pD]||r[pT]||'').trim()) return;
+    byName[nm].parking.push({
+      desc:(r[pD]||'').trim(), tip:(r[pT]||'').trim(),
+      map:cleanLink(r[pL]), photo:driveImg(r[pP]),
+      by:authorName(by), date:fmtDate(r[pDt])
+    });
+  });
+
+  // 맛집응답 (폼 → 학교명으로 연결)
+  const fS=colIndex(fd.cols,'학교'), fN=colIndex(fd.cols,'가게명'),
+        fT=colIndex(fd.cols,'종류'), fM=colIndex(fd.cols,'추천 메뉴'),
+        fDs=colIndex(fd.cols,'위치·거리'), fL=colIndex(fd.cols,'위치/참고 링크'),
+        fQ=colIndex(fd.cols,'한줄평'), fBy=colIndex(fd.cols,'이메일 주소'), fDt=colIndex(fd.cols,'타임스탬프');
+  fd.data.forEach(r=>{
+    const nm=(r[fS]||'').trim(); if(!nm||!byName[nm]) return;
+    const by=r[fBy]||''; if(skip(by)) return;
+    if(!(r[fN]||'').trim()) return;
+    byName[nm].food.push({
+      name:(r[fN]||'').trim(), type:(r[fT]||'').trim()||'맛집',
+      menu:(r[fM]||'').trim(), dist:(r[fDs]||'').trim(),
+      map:cleanLink(r[fL]), quote:(r[fQ]||'').trim(),
+      by:authorName(by), date:fmtDate(r[fDt])
+    });
+  });
+
+  showState('ok');
+  renderList();
+}
+// 칸 어디에 URL이 있어도 뽑아냄 (카카오맵: "[카카오맵] 북촌초 https://kko.to/..." 대응)
+function cleanLink(v){
+  const s=(v||'').trim();
+  if(!s) return '';
+  const m=s.match(/https?:\/\/[^\s]+/i);
+  return m ? m[0] : '';
+}
+// 구글 드라이브 파일 링크 → 화면에 바로 뜨는 이미지 주소로 변환
+function driveImg(v){
+  const s=(v||'').trim();
+  if(!s) return '';
+  // https://drive.google.com/open?id=XXXX  또는  /file/d/XXXX/view
+  let m=s.match(/[?&]id=([A-Za-z0-9_-]+)/) || s.match(/\/d\/([A-Za-z0-9_-]+)/);
+  if(m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000`;
+  return cleanLink(s); // 드라이브가 아니면 원래 링크 그대로(이미지 URL일 수도)
+}
+
+/* ========== 상태 화면 ========== */
+function showState(mode, msg){
+  const list=document.getElementById('list');
+  if(mode==='loading'){
+    list.innerHTML=`<div class="state"><div class="sp"></div><b>학교 정보를 불러오는 중…</b><span>구글 시트에서 최신 데이터를 가져오고 있어요.</span></div>`;
+  }else if(mode==='error'){
+    list.innerHTML=`<div class="state">
+      <b>시트를 불러오지 못했어요</b>
+      <span>${msg||''}<br><br>
+      확인해 주세요.<br>
+      · 이 앱이 <b>웹 주소(http/https)</b>로 열려 있나요? 파일을 그냥 더블클릭해 열면 보안 정책 때문에 막힐 수 있어요.<br>
+      · 시트 공유가 <b>‘링크가 있는 모든 사용자 · 뷰어’</b>로 되어 있나요?</span>
+      <button class="retry" id="retry">다시 시도</button>
+    </div>`;
+    document.getElementById('retry').addEventListener('click',()=>loadData().catch(showErr));
+  }
+}
+function showErr(e){ showState('error', String(e&&e.message||e)); }
+
+/* ========== 목록 ========== */
+let filter='all', query='';
+const listEl=document.getElementById('list');
+function renderList(){
+  const q=query.trim();
+  const items=SCHOOLS.filter(s=>{
+    const okF = filter==='all' || s.type===filter;
+    const okQ = s.name.toLowerCase().includes(q.toLowerCase());
+    const hasInfo = s.parking.length>0 || s.food.length>0;
+    // 검색 중이면 전체 학교에서 찾고, 검색 안 할 땐 정보 있는 학교만 표시
+    const okInfo = q ? true : hasInfo;
+    return okF && okQ && okInfo;
+  });
+  let metaText = q
+    ? `${items.length}개 학교`
+    : `정보가 등록된 학교 ${items.length}곳`;
+  let html=`<div class="list-meta">${metaText}</div>`;
+  if(items.length===0){
+    html+= q
+      ? `<div class="empty" style="margin-top:8px"><b>찾는 학교가 없어요</b><span>검색어를 바꾸거나, 아래 ‘정보 추가’로 새 학교를 등록해 주세요.</span></div>`
+      : `<div class="empty" style="margin-top:8px"><b>아직 등록된 정보가 없어요</b><span>학교 이름을 검색해 첫 주차·맛집 정보를 올려보세요.</span></div>`;
+  }
+  items.forEach(s=>{
+    const p=s.parking.length, f=s.food.length;
+    let badges='';
+    if(p) badges+=`<span class="badge b-park">${IC.park} 주차 ${p}</span>`;
+    if(f) badges+=`<span class="badge b-food">${IC.food} 맛집·카페 ${f}</span>`;
+    if(!p && !f) badges=`<span class="badge b-empty">아직 정보 없음</span>`;
+    html+=`<div class="card" data-id="${s.id}">
+        <div class="card-top">
+          <div><div class="school-name">${s.name}</div>
+          <div class="school-meta">${s.type} · ${s.region}</div></div>
+          <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+        </div>
+        <div class="badges">${badges}</div>
+      </div>`;
+  });
+  listEl.innerHTML=html;
+  listEl.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>openDetail(c.dataset.id)));
+}
+
+/* ========== 상세 ========== */
+const detailEl=document.getElementById('detail');
+const listHead=document.getElementById('listHead');
+function esc(s){return (s||'').replace(/</g,'&lt;')}
+function openDetail(id){
+  const s=SCHOOLS.find(x=>x.id===id); if(!s)return;
+  document.getElementById('dName').textContent=s.name;
+  document.getElementById('dMeta').textContent=[s.type,s.region,s.addr].filter(Boolean).join(' · ');
+  const body=document.getElementById('dBody');
+  let html='';
+
+  html+=`<div class="section"><div class="sec-head"><span class="ic ic-park">${IC.park}</span><span class="sec-title">주차</span><span class="sec-count">${s.parking.length?`· ${s.parking.length}곳`:''}</span></div>`;
+  if(s.parking.length){
+    s.parking.forEach(p=>{
+      html+=`<div class="entry">
+        ${p.desc?`<div class="entry-line">${esc(p.desc)}</div>`:''}
+        ${p.tip?`<div class="entry-tip">${esc(p.tip)}</div>`:''}
+        ${p.photo?`<a href="${p.photo}" target="_blank" rel="noopener"><img class="park-photo" src="${p.photo}" alt="주차 위치 사진" loading="lazy" onerror="this.parentNode.outerHTML='&lt;a class=&quot;photo-link&quot; href=&quot;'+this.src+'&quot; target=&quot;_blank&quot;&gt;${'사진 보기'}&lt;/a&gt;'"></a>`:''}
+        ${p.map?`<div><a class="maplink" href="${p.map}" target="_blank" rel="noopener">${IC.map} 지도에서 보기</a></div>`:''}
+        <div class="author"><span class="dot">${(p.by||'?')[0]}</span>${esc(p.by)} 선생님${p.date?' · '+p.date:''}</div>
+      </div>`;
+    });
+  }else{
+    html+=`<div class="empty"><b>아직 주차 정보가 없어요</b><span>이 학교에 가보셨다면 첫 주차 팁을 남겨 주세요.</span></div>`;
+  }
+  html+=`</div>`;
+
+  html+=`<div class="section"><div class="sec-head"><span class="ic ic-food">${IC.food}</span><span class="sec-title">맛집·카페</span><span class="sec-count">${s.food.length?`· ${s.food.length}곳`:''}</span></div>`;
+  if(s.food.length){
+    s.food.forEach(f=>{
+      const tag=f.type==='카페'?'t-cafe':'t-food';
+      html+=`<div class="entry">
+        <div class="store-row"><span class="store-name">${esc(f.name)}</span><span class="type-tag ${tag}">${esc(f.type)}</span></div>
+        ${(f.menu||f.dist)?`<div class="kv">${f.menu?`<b>${esc(f.menu)}</b>`:''}${(f.menu&&f.dist)?' · ':''}${esc(f.dist)}</div>`:''}
+        ${f.quote?`<div class="quote">${esc(f.quote)}</div>`:''}
+        ${f.map?`<a class="maplink" href="${f.map}" target="_blank" rel="noopener">${IC.map} 지도·후기 링크</a>`:''}
+        <div class="author"><span class="dot">${(f.by||'?')[0]}</span>${esc(f.by)} 선생님${f.date?' · '+f.date:''}</div>
+      </div>`;
+    });
+  }else{
+    html+=`<div class="empty"><b>아직 맛집·카페 정보가 없어요</b><span>점심 먹기 좋은 곳을 알려 주세요.</span></div>`;
+  }
+  html+=`</div>`;
+
+  body.innerHTML=html;
+  listHead.classList.add('off'); listEl.classList.add('off'); detailEl.classList.add('on');
+  window.scrollTo(0,0);
+}
+document.getElementById('back').addEventListener('click',()=>{
+  detailEl.classList.remove('on'); listHead.classList.remove('off'); listEl.classList.remove('off');
+});
+
+/* ========== 검색·탭·버튼 ========== */
+document.getElementById('q').addEventListener('input',e=>{query=e.target.value;renderList();});
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  b.classList.add('on'); filter=b.dataset.f; renderList();
+});
+document.getElementById('fab').addEventListener('click',()=>{
+  if(!FORM_PARKING && !FORM_FOOD){
+    alert('구글 폼 주소를 넣으면 여기서 정보 입력 폼이 열립니다.');
+    return;
+  }
+  openAddSheet();
+});
+function openAddSheet(){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(33,28,24,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML=`<div style="background:#fff;width:100%;max-width:460px;border-radius:20px 20px 0 0;padding:20px 18px 26px;box-shadow:0 -8px 30px rgba(0,0,0,.15)">
+    <div style="font-size:16px;font-weight:800;margin-bottom:4px">어떤 정보를 추가할까요?</div>
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px">구글 폼이 열립니다. 학교를 고르고 아는 것만 채우면 돼요.</div>
+    <button data-u="${FORM_PARKING}" class="addbtn" style="width:100%;display:flex;align-items:center;gap:10px;background:var(--park-soft);color:var(--park);border:0;border-radius:12px;padding:15px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:10px">${IC.park} 주차 정보 추가</button>
+    <button data-u="${FORM_FOOD}" class="addbtn" style="width:100%;display:flex;align-items:center;gap:10px;background:var(--food-soft);color:var(--food);border:0;border-radius:12px;padding:15px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:14px">${IC.food} 맛집·카페 추가</button>
+    <button id="addCancel" style="width:100%;background:none;border:0;color:var(--muted);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;padding:6px">닫기</button>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
+  ov.querySelector('#addCancel').addEventListener('click',()=>ov.remove());
+  ov.querySelectorAll('.addbtn').forEach(b=>b.addEventListener('click',()=>{
+    const u=b.dataset.u; if(u){ window.open(u,'_blank'); ov.remove(); }
+    else alert('이 폼 주소가 아직 연결되지 않았어요.');
+  }));
+}
+const rf=document.getElementById('refresh');
+rf.addEventListener('click',()=>{ rf.classList.add('spin'); loadData().catch(showErr).finally(()=>rf.classList.remove('spin')); });
+
+/* 시작 */
+loadData().catch(showErr);
+</script>
+</body>
+</html>
