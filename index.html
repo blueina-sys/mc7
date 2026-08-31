@@ -186,13 +186,13 @@
 
 <script>
 /* ========== 설정 ========== */
-const SHEET_ID = '1vKOtOGwO5qT_qn_UlmZbbFiZg8OQ1gwJTEL-Bc46wQA';
-// 구글 폼 응답이 쌓이는 탭 이름 (폼과 연결된 탭)
-const TAB = { schools:'학교목록', parking:'주차응답', food:'맛집응답', teachers:'강사매칭' };
+const SHEET_ID = '1zW2gWKIlSMOqywp_jSTNgXog2JuU-CowKeCUkF8ctD8'; // 공개용 시트(이메일 없음)
+// 공개 시트의 탭 이름 (원본 시트에서 이메일을 뺀 사본)
+const TAB = { schools:'학교목록', parking:'주차응답', food:'맛집응답' };
 // 구글 폼 주소 — 여기에 넣으면 '정보 추가' 버튼이 해당 폼을 엽니다.
 const FORM_PARKING = 'https://docs.google.com/forms/d/e/1FAIpQLSe0fj1KmvTl650rgdjADz4bi5HwKEc9gALu8s60C7nVK8edwA/viewform'; // 주차 정보 입력 폼 주소
 const FORM_FOOD = 'https://docs.google.com/forms/d/e/1FAIpQLSd0cxkAQ38glYjOxUJ432AY2POP2G9S291maSUcljMQFJlVQQ/viewform';    // 맛집·카페 정보 입력 폼 주소
-const SKIP_EMAILS = []; // 자동 제외할 이메일(있으면)
+const SKIP_AUTHORS = []; // 화면에서 숨길 작성자 이름(있으면)
 
 const IC = {
   park:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>',
@@ -259,19 +259,15 @@ let SCHOOLS=[];
 async function loadData(){
   showState('loading');
 
-  const [sc, pk, fd, tc] = await Promise.all([
+  const [sc, pk, fd] = await Promise.all([
     fetchTab(TAB.schools,'학교ID'),
     fetchTab(TAB.parking,'주차 위치 설명'),
-    fetchTab(TAB.food,'가게명'),
-    fetchTab(TAB.teachers,'이메일')
+    fetchTab(TAB.food,'가게명')
   ]);
 
-  // 강사 이메일 → 이름
-  const ti=colIndex(tc.cols,'이메일'), tn=colIndex(tc.cols,'강사이름');
-  const nameByEmail={};
-  tc.data.forEach(r=>{ const e=(r[ti]||'').trim().toLowerCase(); if(e) nameByEmail[e]=(r[tn]||'').trim()||e; });
-  const authorName=e=>{ const k=(e||'').trim().toLowerCase(); return nameByEmail[k]|| (e? e.split('@')[0]:'익명'); };
-  const skip=e=>SKIP_EMAILS.includes((e||'').trim().toLowerCase());
+  // 작성자 이름은 시트에서 이미 변환돼 옵니다 (이메일은 원본 시트에만 남음)
+  const authorName=n=>(n||'').trim()||'익명';
+  const skip=n=>SKIP_AUTHORS.includes((n||'').trim());
 
   // 학교 (학교명으로 연결)
   const sId=colIndex(sc.cols,'학교ID'), sN=colIndex(sc.cols,'학교명'),
@@ -286,7 +282,7 @@ async function loadData(){
   // 주차응답 (폼 → 학교명으로 연결)
   const pS=colIndex(pk.cols,'학교'), pD=colIndex(pk.cols,'주차 위치 설명'),
         pT=colIndex(pk.cols,'주차 팁'), pL=colIndex(pk.cols,'주차 지도 링크'),
-        pP=colIndex(pk.cols,'주차 위치 사진'), pBy=colIndex(pk.cols,'이메일 주소'), pDt=colIndex(pk.cols,'타임스탬프');
+        pP=colIndex(pk.cols,'주차 위치 사진'), pBy=colIndex(pk.cols,'작성자'), pDt=colIndex(pk.cols,'타임스탬프');
   pk.data.forEach(r=>{
     const nm=(r[pS]||'').trim(); if(!nm||!byName[nm]) return;
     const by=r[pBy]||''; if(skip(by)) return;
@@ -302,7 +298,7 @@ async function loadData(){
   const fS=colIndex(fd.cols,'학교'), fN=colIndex(fd.cols,'가게명'),
         fT=colIndex(fd.cols,'종류'), fM=colIndex(fd.cols,'추천 메뉴'),
         fDs=colIndex(fd.cols,'위치·거리'), fL=colIndex(fd.cols,'위치/참고 링크'),
-        fQ=colIndex(fd.cols,'한줄평'), fBy=colIndex(fd.cols,'이메일 주소'), fDt=colIndex(fd.cols,'타임스탬프');
+        fQ=colIndex(fd.cols,'한줄평'), fBy=colIndex(fd.cols,'작성자'), fDt=colIndex(fd.cols,'타임스탬프');
   fd.data.forEach(r=>{
     const nm=(r[fS]||'').trim(); if(!nm||!byName[nm]) return;
     const by=r[fBy]||''; if(skip(by)) return;
