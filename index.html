@@ -236,6 +236,11 @@ function colIndex(cols, name){ return cols.findIndex(c=>c.replace(/\s/g,'')===na
 function fmtDate(s){
   if(!s) return '';
   const str=String(s).trim();
+  // 구글 시트 날짜 일련번호: IMPORTRANGE로 넘어오면 "46264.82817" 처럼 숫자가 됨
+  if(/^\d+(\.\d+)?$/.test(str)){
+    const d=new Date(Math.round((parseFloat(str)-25569)*86400000));
+    if(!isNaN(d.getTime())) return `${d.getUTCMonth()+1}/${d.getUTCDate()}`;
+  }
   // 구글 폼: "2026. 8. 30 오후 7:55:25"
   let m=str.match(/(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/);
   if(m) return `${+m[2]}/${+m[3]}`;
