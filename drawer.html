@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>공용 서랍 · MC7=8</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  /* 배경·본문색·카드·글꼴은 index.html과 동일하게 두고, 강조색만 보라로 바꿔
+     두 페이지가 한눈에 구분되게 합니다. 재사용한 컴포넌트들이 --brand를
+     참조하고 있어서, 이 한 줄만 바꾸면 검색창·버튼·스피너가 모두 따라옵니다. */
+  :root{
+    --bg:#FBFAF8; --surface:#FFFFFF; --ink:#211C18; --muted:#8C837A;
+    --line:#ECE7E0; --line2:#F4F0EA;
+    --brand:#6F4A8E; --brand-soft:#F0EAF8;
+    --shadow:0 1px 2px rgba(33,28,24,.04), 0 8px 24px rgba(33,28,24,.06);
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Pretendard','Pretendard Variable',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    background:var(--bg); color:var(--ink);
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+    display:flex; justify-content:center;
+  }
+  .phone{
+    width:100%; max-width:460px; background:var(--bg);
+    position:relative; display:flex; flex-direction:column;
+    box-shadow:0 0 0 1px var(--line);
+  }
+  @media(min-width:520px){
+    .phone{ margin:24px 0; height:calc(100vh - 48px); border-radius:24px; overflow:hidden; }
+    .phone .list{ overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  }
+
+  /* 두 앱 전환 */
+  .appnav{display:flex; gap:6px; margin-bottom:14px}
+  .appnav a{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600;
+            color:var(--muted); text-decoration:none; padding:6px 12px; border-radius:999px;
+            border:1px solid var(--line); background:var(--surface); transition:.15s}
+  .appnav a:hover{color:var(--ink)}
+  .appnav a.on{background:var(--brand-soft); color:var(--brand); border-color:transparent}
+  .appnav svg{width:14px; height:14px; flex:none}
+
+  .app-head{padding:18px 20px 16px; background:var(--surface); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20;}
+  .brand-row{display:flex; align-items:center; gap:9px; margin-bottom:3px}
+  .brand-mark{width:26px;height:26px;border-radius:8px;background:var(--brand);display:grid;place-items:center;flex:none;}
+  .brand-mark svg{width:15px;height:15px}
+  .app-title{font-size:18px; font-weight:800; letter-spacing:-.02em}
+  .app-sub{font-size:12.5px; color:var(--muted); margin-left:35px; margin-top:-2px}
+
+  .search{margin-top:16px; display:flex; align-items:center; gap:9px; background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:11px 13px;}
+  .search:focus-within{border-color:var(--brand); background:var(--surface)}
+  .search svg{width:17px;height:17px;color:var(--muted);flex:none}
+  .search input{border:0;background:transparent;outline:0;font-size:15px;width:100%;font-family:inherit;color:var(--ink)}
+  .search input::placeholder{color:var(--muted)}
+
+  .tabs{display:flex; gap:7px; margin-top:12px}
+  .tab{font-size:13.5px; font-weight:600; color:var(--muted); padding:7px 14px; border-radius:999px; border:1px solid var(--line); background:var(--surface); cursor:pointer; transition:.15s; font-family:inherit; white-space:nowrap}
+  .tab.on{background:var(--ink); color:#fff; border-color:var(--ink)}
+
+  /* 태그줄은 가로로 넘칠 수 있어 자기 안에서만 스크롤시킵니다.
+     본문이 가로로 밀리면 아이폰 세로 화면에서 화면이 흔들립니다. */
+  .tagbar{display:flex; gap:6px; margin-top:10px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px}
+  .tagbar::-webkit-scrollbar{display:none}
+  .tagchip{font-size:12px; font-weight:600; color:var(--muted); background:var(--bg); border:1px solid var(--line);
+           border-radius:999px; padding:5px 11px; cursor:pointer; font-family:inherit; white-space:nowrap; transition:.15s}
+  .tagchip .n{opacity:.65; margin-left:3px; font-weight:500}
+  .tagchip.on{background:var(--brand); color:#fff; border-color:var(--brand)}
+  .tagchip.on .n{opacity:.8}
+
+  .list{padding:14px 16px 100px; flex:1}
+  .list-meta{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); padding:2px 4px 10px}
+  .refresh{margin-left:auto; background:none; border:0; color:var(--muted); cursor:pointer; padding:4px 6px;
+           border-radius:8px; display:inline-flex; align-items:center; gap:5px; font-family:inherit; font-size:12.5px; font-weight:600}
+  .refresh:hover{background:var(--surface); color:var(--ink)}
+  .refresh svg{width:14px;height:14px}
+  .refresh.spin svg{animation:sp .8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* 카드 — 왼쪽 세로 띠가 공유자입니다. 스크롤하며 훑을 때 이름이 세로로
+     정렬돼 눈에 빨리 들어오고, 색이 고정돼 있어 읽지 않아도 누군지 압니다. */
+  .dcard{display:flex; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+         overflow:hidden; margin-bottom:11px; box-shadow:var(--shadow)}
+  .who{flex:none; width:36px; display:flex; align-items:center; justify-content:center; padding:14px 0;
+       background:var(--who-soft); color:var(--who); box-shadow:inset 3px 0 0 var(--who)}
+  .who span{writing-mode:vertical-rl; text-orientation:upright; font-size:12px; font-weight:700; letter-spacing:.06em}
+  .dbody{flex:1; min-width:0; padding:14px 15px}
+  .dtitle{font-size:15.5px; font-weight:700; letter-spacing:-.01em; word-break:break-word}
+  .dmemo{font-size:13.5px; color:#5C554D; line-height:1.55; margin-top:4px; white-space:pre-wrap; word-break:break-word}
+  .dtags{display:flex; flex-wrap:wrap; gap:5px; margin-top:9px}
+  .tg{font-size:11.5px; font-weight:600; color:var(--muted); background:var(--line2); padding:3px 7px; border-radius:6px; cursor:pointer}
+  .tg:hover{color:var(--brand); background:var(--brand-soft)}
+  .dmeta{display:flex; align-items:center; gap:7px; margin-top:10px; font-size:12px; color:var(--muted)}
+  .price{font-weight:700; color:var(--ink); font-size:13px}
+  .copy{margin-left:auto; background:none; border:0; color:var(--muted); cursor:pointer; padding:4px 6px;
+        border-radius:7px; display:inline-flex; align-items:center; gap:4px; font-family:inherit; font-size:11.5px; font-weight:600}
+  .copy:hover{background:var(--bg); color:var(--brand)}
+  .copy svg{width:13px;height:13px}
+  .dgo{display:inline-flex; align-items:center; gap:6px; margin-top:11px; font-size:13px; font-weight:600;
+       color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:9px;
+       padding:8px 12px; text-decoration:none}
+  .dgo:hover{border-color:var(--brand); color:var(--brand)}
+  .dgo svg{width:14px;height:14px}
+
+  .fab{position:fixed;bottom:22px;left:50%;transform:translateX(-50%); background:var(--brand);color:#fff;border:0;border-radius:999px;
+       padding:14px 22px;font-size:14.5px;font-weight:700;font-family:inherit; display:flex;align-items:center;gap:8px;cursor:pointer;
+       box-shadow:0 6px 20px rgba(111,74,142,.35);z-index:30; text-decoration:none}
+  .fab svg{width:17px;height:17px}
+  @media(min-width:520px){ .fab{position:absolute} }
+
+  .empty{text-align:center;padding:26px 20px;background:var(--surface); border:1px dashed var(--line);border-radius:14px;color:var(--muted);}
+  .empty b{display:block;color:var(--ink);font-size:14.5px;font-weight:700;margin-bottom:4px}
+  .empty span{font-size:13px}
+  .state{padding:60px 30px;text-align:center;color:var(--muted)}
+  .state .sp{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;margin:0 auto 16px;animation:sp .8s linear infinite}
+  .state b{display:block;color:var(--ink);font-size:15px;font-weight:700;margin-bottom:6px}
+  .state span{font-size:13px;line-height:1.6}
+  .state .retry{margin-top:16px;background:var(--ink);color:#fff;border:0;border-radius:10px;padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <header class="app-head">
+    <nav class="appnav">
+      <a href="./index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        학교 정보
+      </a>
+      <a href="./drawer.html" class="on" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M10 7.5h4M10 16.5h4"/></svg>
+        공용 서랍
+      </a>
+    </nav>
+
+    <div class="brand-row">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M10 7.5h4M10 16.5h4"/></svg>
+      </div>
+      <div class="app-title">공용 서랍</div>
+    </div>
+    <div class="app-sub">단톡방에 흘러간 링크, 여기 모아둡니다</div>
+
+    <label class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="이름, 메모, 태그, 공유자" autocomplete="off">
+    </label>
+
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-c="all">전체</button>
+      <button class="tab" data-c="물건">물건</button>
+      <button class="tab" data-c="병원·약국">병원·약국</button>
+      <button class="tab" data-c="기타">기타</button>
+    </div>
+
+    <div class="tagbar" id="tagbar" hidden></div>
+  </header>
+
+  <main class="list" id="list"></main>
+
+  <a class="fab" id="fab" href="#" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    정보 추가
+  </a>
+</div>
+
+<script>
+/* ========== 설정 ========== */
+// 앱이 읽는 건 이메일이 빠진 공개용 시트입니다. 원본 시트는 비공개라 브라우저가 읽을 수 없고,
+// 읽을 수 있게 열면 강사 이메일이 같이 공개됩니다.
+const SHEET_ID = '1zW2gWKIlSMOqywp_jSTNgXog2JuU-CowKeCUkF8ctD8';
+const TAB_DRAWER = '추천응답';
+const FORM_DRAWER = 'https://docs.google.com/forms/d/e/1FAIpQLSdJ85P_dxA6QFDBmvZ7MvpxR3GCnGdesCbxaGeb3cU2S-0QQw/viewform';
+const TAG_MIN = 3;   // 태그가 이보다 적으면 태그줄을 숨겨 초반 화면을 비워둡니다
+
+/* ========== 공용 유틸 (index.html에서 가져옴) ========== */
+function gvizURL(sheetName){
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+}
+// 태그 칸에 쉼표가 들어 있어서, 따옴표를 제대로 처리하는 파서가 필요합니다.
+// split(',')로 자르면 열이 통째로 밀립니다.
+function parseCSV(text){
+  const rows=[]; let row=[], cur='', q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){
+      if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; }
+      else cur+=c;
+    }else{
+      if(c==='"') q=true;
+      else if(c===','){ row.push(cur); cur=''; }
+      else if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; }
+      else if(c!=='\r') cur+=c;
+    }
+  }
+  if(cur!==''||row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+function findHeader(rows, token){
+  for(let i=0;i<rows.length;i++){
+    const cells=rows[i].map(x=>(x||'').trim());
+    if(cells.includes(token)) return {idx:i, cols:cells};
+  }
+  return null;
+}
+// 폼에 질문을 추가하면 열 순서가 바뀌므로, 위치가 아니라 이름으로 찾습니다.
+function colIndex(cols, name){ return cols.findIndex(c=>c.replace(/\s/g,'')===name.replace(/\s/g,'')); }
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
+// 칸 안에 설명이 섞여 있어도("[카카오맵] 북촌초 https://…") 주소만 뽑아냅니다.
+function cleanLink(v){
+  const m=String(v||'').trim().match(/https?:\/\/[^\s]+/i);
+  return m ? m[0] : '';
+}
+async function fetchTab(sheetName, headerToken){
+  const res=await fetch(gvizURL(sheetName), {cache:'no-store'});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const rows=parseCSV(await res.text());
+  const h=findHeader(rows, headerToken);
+  if(!h) throw new Error('헤더 '+headerToken+' 없음');
+  return { cols:h.cols, data:rows.slice(h.idx+1) };
+}
+
+/* ========== 날짜 ========== */
+// new Date('2026. 9. 2 오후 3:12:05')는 브라우저마다 결과가 달라서 쓰지 않습니다.
+// 숫자만 뽑아 정렬 키와 표시 문자열을 따로 만듭니다.
+function tsParse(v){
+  const s=String(v==null?'':v).trim();
+  if(!s) return {key:0, label:''};
+  // IMPORTRANGE를 거치면 날짜가 "46265.92657" 같은 시트 일련번호로 넘어옵니다.
+  if(/^\d+(\.\d+)?$/.test(s)){
+    const ms=Math.round((parseFloat(s)-25569)*86400000);
+    const d=new Date(ms);
+    if(!isNaN(d.getTime())) return {key:ms, label:`${d.getUTCMonth()+1}/${d.getUTCDate()}`};
+  }
+  const m=s.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  if(m) return {key:Date.UTC(+m[1], +m[2]-1, +m[3]), label:`${+m[2]}/${+m[3]}`};
+  return {key:0, label:s.split(' ')[0]};
+}
+
+/* ========== 링크 → 버튼 라벨 ========== */
+// 지도와 쇼핑몰을 같은 자리에서 처리합니다. 덕분에 병원 정보가 별도 화면 없이 그냥 들어옵니다.
+const GO_RULES = [
+  [/map\.kakao\.|kko\.to/i,                 '카카오맵'],
+  [/map\.naver\.|naver\.me/i,               '네이버지도'],
+  [/google\.[a-z.]+\/maps|maps\.app\.goo\.gl/i, '구글맵'],
+  [/coupang/i,                              '쿠팡'],
+  [/smartstore|shopping\.naver/i,           '네이버'],
+  [/11st\./i,                               '11번가'],
+  [/gmarket/i,                              'G마켓'],
+  [/oliveyoung/i,                           '올리브영'],
+  [/daiso/i,                                '다이소'],
+  [/aliexpress/i,                           '알리익스프레스']
+];
+function goLabel(url){
+  for(const [re,name] of GO_RULES) if(re.test(url)) return name+'에서 보기';
+  return '링크 열기';
+}
+
+/* ========== 공유자 색 ========== */
+// 이름 문자열을 숫자로 접어 팔레트에서 고르므로, 같은 사람은 언제나 같은 색입니다.
+const WHO_COLORS = [
+  ['#6F4A8E','#F0EAF8'], ['#2F6DB0','#E9F0F8'], ['#3B8A76','#E7F3EF'],
+  ['#C24A2C','#FBEBE6'], ['#A8571E','#F9EEE2'], ['#8A4F7D','#F7EAF3'],
+  ['#4A6FA5','#EBF0F7'], ['#6B6259','#F1EEEA']
+];
+function whoColor(name){
+  let h=0;
+  for(let i=0;i<name.length;i++) h=(h*31 + name.charCodeAt(i)) >>> 0;
+  return WHO_COLORS[h % WHO_COLORS.length];
+}
+
+/* ========== 상태 ========== */
+const listEl=document.getElementById('list');
+function showState(mode, msg){
+  if(mode==='loading'){
+    listEl.innerHTML=`<div class="state"><div class="sp"></div><b>서랍을 여는 중…</b><span>구글 시트에서 최신 목록을 가져오고 있어요.</span></div>`;
+  }else if(mode==='error'){
+    listEl.innerHTML=`<div class="state">
+      <b>목록을 불러오지 못했어요</b>
+      <span>${esc(msg||'')}</span>
+      <span><br>공개용 시트가 «링크가 있는 모든 사용자 · 뷰어»로 공유돼 있는지,
+      <b>추천응답</b> 탭이 있는지 확인해 주세요.</span>
+      <button class="retry" id="retry">다시 시도</button>
+    </div>`;
+    document.getElementById('retry').addEventListener('click', load);
+  }
+}
+
+/* ========== 데이터 ========== */
+let ITEMS=[];              // 전체 목록 (최신순)
+let query='', cat='all';
+let activeTags=new Set();  // 여러 개 고르면 모두 만족하는 것만 (AND)
+
+async function load(){
+  const rf=document.getElementById('refresh');
+  if(rf) rf.classList.add('spin');
+  if(!ITEMS.length) showState('loading');
+  try{
+    const t=await fetchTab(TAB_DRAWER, '링크');
+    const iT=colIndex(t.cols,'타임스탬프'), iW=colIndex(t.cols,'공유자'),
+          iL=colIndex(t.cols,'링크'),       iN=colIndex(t.cols,'이름'),
+          iC=colIndex(t.cols,'분류'),       iG=colIndex(t.cols,'태그'),
+          iM=colIndex(t.cols,'한줄 메모'),  iP=colIndex(t.cols,'가격');
+
+    ITEMS = t.data.map((r,i)=>{
+      const link=cleanLink(r[iL]);
+      const name=(r[iN]||'').trim();
+      if(!link && !name) return null;
+      const ts=tsParse(r[iT]);
+      return {
+        link, name: name || link,
+        who: (r[iW]||'').trim() || '익명',
+        cat: (r[iC]||'').trim() || '기타',
+        // 체크박스라 "강의용, 전자기기"처럼 한 칸에 들어옵니다.
+        // 구분자가 ',' 인지 ', ' 인지 확정할 수 없어 둘 다 받습니다.
+        tags: (r[iG]||'').split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean),
+        memo: (r[iM]||'').trim(),
+        price: (r[iP]||'').trim(),
+        key: ts.key, date: ts.label, seq: i
+      };
+    }).filter(Boolean)
+      .sort((a,b)=> b.key-a.key || b.seq-a.seq);   // 최신순, 같은 날이면 나중 입력이 위로
+
+    renderTagbar();
+    render();
+  }catch(e){
+    showState('error', String(e && e.message || e));
+  }finally{
+    const r2=document.getElementById('refresh');
+    if(r2) r2.classList.remove('spin');
+  }
+}
+
+function priceText(v){
+  if(!v) return '';
+  const n=v.replace(/[^\d]/g,'');
+  if(!n) return v;                                   // "가격 문의" 같은 글자는 그대로
+  return Number(n).toLocaleString('ko-KR')+'원';
+}
+
+/* ========== 태그줄 ========== */
+function renderTagbar(){
+  const bar=document.getElementById('tagbar');
+  const count={};
+  ITEMS.forEach(it=>it.tags.forEach(t=>{ count[t]=(count[t]||0)+1; }));
+  const tags=Object.keys(count).sort((a,b)=> count[b]-count[a] || a.localeCompare(b,'ko'));
+  // 태그가 얼마 없을 때 태그줄까지 띄우면 화면만 어수선해집니다.
+  if(tags.length < TAG_MIN){ bar.hidden=true; bar.innerHTML=''; activeTags.clear(); return; }
+  bar.hidden=false;
+  bar.innerHTML=tags.map(t=>
+    `<button class="tagchip${activeTags.has(t)?' on':''}" data-t="${esc(t)}">#${esc(t)}<span class="n">${count[t]}</span></button>`
+  ).join('');
+}
+
+/* ========== 목록 ========== */
+function render(){
+  const q=query.trim().toLowerCase();
+  const items=ITEMS.filter(it=>{
+    if(cat!=='all' && it.cat!==cat) return false;
+    for(const t of activeTags) if(!it.tags.includes(t)) return false;   // AND
+    if(!q) return true;
+    return [it.name, it.memo, it.who, it.tags.join(' ')].join(' ').toLowerCase().includes(q);
+  });
+
+  if(!ITEMS.length){
+    listEl.innerHTML=`<div class="empty" style="margin-top:8px"><b>서랍이 비어 있어요</b>
+      <span>아래 «정보 추가»로 첫 링크를 넣어 주세요.</span></div>`;
+    return;
+  }
+  let html=`<div class="list-meta"><span>${items.length}개</span>
+    <button class="refresh" id="refresh">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/></svg>새로고침
+    </button></div>`;
+
+  if(!items.length){
+    html+=`<div class="empty" style="margin-top:8px"><b>조건에 맞는 게 없어요</b>
+      <span>검색어를 바꾸거나 위 태그를 다시 눌러 해제해 주세요.</span></div>`;
+  }
+
+  items.forEach(it=>{
+    const [c, soft]=whoColor(it.who);
+    const price=priceText(it.price);
+    html+=`<article class="dcard" style="--who:${c};--who-soft:${soft}">
+      <div class="who"><span>${esc(it.who)}</span></div>
+      <div class="dbody">
+        <div class="dtitle">${esc(it.name)}</div>
+        ${it.memo?`<div class="dmemo">${esc(it.memo)}</div>`:''}
+        ${it.tags.length?`<div class="dtags">${it.tags.map(t=>`<span class="tg" data-t="${esc(t)}">#${esc(t)}</span>`).join('')}</div>`:''}
+        <div class="dmeta">
+          ${price?`<span class="price">${esc(price)}</span>`:''}
+          ${it.date?`<span>${esc(it.date)}</span>`:''}
+          ${it.link?`<button class="copy" data-u="${esc(it.link)}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>복사
+          </button>`:''}
+        </div>
+        ${it.link?`<a class="dgo" href="${esc(it.link)}" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6M10 14 21 3"/></svg>
+          ${esc(goLabel(it.link))}
+        </a>`:''}
+      </div>
+    </article>`;
+  });
+  listEl.innerHTML=html;
+}
+
+/* ========== 조작 ========== */
+document.getElementById('q').addEventListener('input', e=>{ query=e.target.value; render(); });
+
+document.getElementById('tabs').addEventListener('click', e=>{
+  const b=e.target.closest('.tab'); if(!b) return;
+  document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.remove('on'));
+  b.classList.add('on'); cat=b.dataset.c; render();
+});
+
+document.getElementById('tagbar').addEventListener('click', e=>{
+  const b=e.target.closest('.tagchip'); if(!b) return;
+  const t=b.dataset.t;
+  if(activeTags.has(t)) activeTags.delete(t); else activeTags.add(t);
+  b.classList.toggle('on');
+  render();
+});
+
+// 카드 안의 태그를 눌러도 같은 필터가 걸립니다. 새로고침·복사도 여기서 함께 받습니다.
+listEl.addEventListener('click', async e=>{
+  const tg=e.target.closest('.tg');
+  if(tg){
+    const t=tg.dataset.t;
+    if(activeTags.has(t)) activeTags.delete(t); else activeTags.add(t);
+    renderTagbar(); render();
+    document.querySelector('.phone').scrollIntoView({block:'start'});
+    return;
+  }
+  if(e.target.closest('#refresh')){ load(); return; }
+  const cp=e.target.closest('.copy');
+  if(cp){
+    const url=cp.dataset.u;
+    const done=()=>{ const o=cp.innerHTML; cp.textContent='복사됨'; setTimeout(()=>{cp.innerHTML=o;},1500); };
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){ await navigator.clipboard.writeText(url); done(); }
+      else throw new Error('no clipboard');
+    }catch(_){
+      // 카카오톡 내장 브라우저처럼 클립보드가 막힌 곳에서도 복사가 되게 합니다.
+      const ta=document.createElement('textarea');
+      ta.value=url; ta.style.cssText='position:fixed;top:-1000px;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); done(); }catch(__){ }
+      document.body.removeChild(ta);
+    }
+  }
+});
+
+document.getElementById('fab').href = FORM_DRAWER;
+
+// 폼을 새 탭에서 채우고 돌아오면 방금 넣은 게 바로 보여야 합니다.
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) load(); });
+
+/* 시작 */
+load();
+</script>
+</body>
+</html>
