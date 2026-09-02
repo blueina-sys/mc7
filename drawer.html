@@ -306,12 +306,10 @@ async function load(){
     if(missing.length){
       console.warn('[공용 서랍] 못 찾은 열:', missing.join(', '));
       console.warn('[공용 서랍] 시트에 있는 열:', t.cols.filter(Boolean).join(' | '));
-      if(iW<0) console.warn(
-        '[공용 서랍] 공유자 열이 없어 전부 «익명»으로 나옵니다.
-'+
-        '공개 시트의 «추천응답» 탭이 원본 응답 탭이 아니라 «추천공개» 탭을 가져오는지
-'+
-        'IMPORTRANGE 수식을 확인해 주세요. 이름 변환은 «추천공개» 탭에서 이뤄집니다.');
+      if(iW<0){
+        console.warn('[공용 서랍] 공유자 열이 없어 전부 «익명»으로 나옵니다.');
+        console.warn('[공용 서랍] 공개 시트의 «추천응답» 탭이 원본 응답 탭이 아니라 «추천공개» 탭을 가져오는지 IMPORTRANGE 수식을 확인해 주세요. 이름 변환은 «추천공개» 탭에서 이뤄집니다.');
+      }
     }
 
     ITEMS = t.data.map((r,i)=>{
