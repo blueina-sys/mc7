@@ -13,6 +13,7 @@
     --park:#2F6DB0; --park-soft:#E9F0F8;
     --food:#C24A2C; --food-soft:#FBEBE6;
     --cafe:#3B8A76; --cafe-soft:#E7F3EF;
+    --memo:#6B6259; --memo-soft:#F1EEEA;
     --shadow:0 1px 2px rgba(33,28,24,.04), 0 8px 24px rgba(33,28,24,.06);
     --radius:16px;
   }
@@ -72,6 +73,7 @@
   .badge svg{width:13px;height:13px}
   .b-park{background:var(--park-soft); color:var(--park)}
   .b-food{background:var(--food-soft); color:var(--food)}
+  .b-memo{background:var(--memo-soft); color:var(--memo)}
   .b-empty{background:var(--line2); color:var(--muted); font-weight:500}
 
   .detail{display:none; flex-direction:column; flex:1}
@@ -90,6 +92,7 @@
   .sec-head .ic svg{width:15px;height:15px}
   .ic-park{background:var(--park-soft);color:var(--park)}
   .ic-food{background:var(--food-soft);color:var(--food)}
+  .ic-memo{background:var(--memo-soft);color:var(--memo)}
   .sec-title{font-size:15.5px;font-weight:700}
   .sec-count{font-size:12.5px;color:var(--muted);font-weight:600}
   .section{margin-bottom:26px}
@@ -97,6 +100,7 @@
   .entry{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 15px; margin-bottom:10px;}
   .entry-line{font-size:14.5px; font-weight:600; margin-bottom:2px}
   .entry-tip{font-size:13.5px; color:#5C554D; line-height:1.55}
+  .memo-text{font-size:14px; color:#3D3833; line-height:1.6; white-space:pre-wrap}
   .store-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
   .store-name{font-size:15px;font-weight:700}
   .type-tag{font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px}
@@ -189,16 +193,18 @@
 /* ========== 설정 ========== */
 const SHEET_ID = '1zW2gWKIlSMOqywp_jSTNgXog2JuU-CowKeCUkF8ctD8'; // 공개용 시트(이메일 없음)
 // 공개 시트의 탭 이름 (원본 시트에서 이메일을 뺀 사본)
-const TAB = { schools:'학교목록', parking:'주차응답', food:'맛집응답' };
+const TAB = { schools:'학교목록', parking:'주차응답', food:'맛집응답', memo:'메모응답' };
 // 구글 폼 주소 — 여기에 넣으면 '정보 추가' 버튼이 해당 폼을 엽니다.
 const FORM_PARKING = 'https://docs.google.com/forms/d/e/1FAIpQLSe0fj1KmvTl650rgdjADz4bi5HwKEc9gALu8s60C7nVK8edwA/viewform'; // 주차 정보 입력 폼 주소
 const FORM_FOOD = 'https://docs.google.com/forms/d/e/1FAIpQLSd0cxkAQ38glYjOxUJ432AY2POP2G9S291maSUcljMQFJlVQQ/viewform';    // 맛집·카페 정보 입력 폼 주소
+const FORM_MEMO = 'https://docs.google.com/forms/d/e/1FAIpQLSe4mbCq7Fedxrt0x0DmOK8RpgMiD6O80CB5WwApR9RfY0Lg6w/viewform';    // 특이사항 메모 입력 폼 주소
 const SKIP_AUTHORS = []; // 화면에서 숨길 작성자 이름(있으면)
 
 const IC = {
   park:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>',
   food:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7a3 3 0 0 0 3 3v10M6 2v6M9 2v6M18 2a4 4 0 0 0-4 4v6h4M18 12v10"/></svg>',
   map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.5 2.5V6L9 3.5m0 16.5 6 2.5m-6-19 6 2.5M15 22l5.5-2.5V3.5L15 6m0 16V6"/></svg>',
+  memo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>',
   photo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>'
 };
 
@@ -265,10 +271,12 @@ let SCHOOLS=[];
 async function loadData(){
   showState('loading');
 
-  const [sc, pk, fd] = await Promise.all([
+  const [sc, pk, fd, mm] = await Promise.all([
     fetchTab(TAB.schools,'학교ID'),
     fetchTab(TAB.parking,'주차 위치 설명'),
-    fetchTab(TAB.food,'가게명')
+    fetchTab(TAB.food,'가게명'),
+    // 메모응답 탭이 아직 없거나 비어 있어도 나머지는 정상 표시
+    fetchTab(TAB.memo,'메모 내용').catch(()=>({cols:[],data:[]}))
   ]);
 
   // 작성자 이름은 시트에서 이미 변환돼 옵니다 (이메일은 원본 시트에만 남음)
@@ -281,7 +289,7 @@ async function loadData(){
   const byName={};
   SCHOOLS = sc.data.filter(r=>(r[sN]||'').trim()).map(r=>{
     const o={ id:(r[sId]||'').trim(), name:(r[sN]||'').trim(), type:(r[sT]||'').trim(),
-              region:(r[sR]||'').trim(), addr:(r[sA]||'').trim(), parking:[], food:[] };
+              region:(r[sR]||'').trim(), addr:(r[sA]||'').trim(), memo:[], parking:[], food:[] };
     byName[o.name]=o; return o;
   });
 
@@ -316,6 +324,18 @@ async function loadData(){
       by:authorName(by), date:fmtDate(r[fDt])
     });
   });
+
+  // 메모응답 (폼 → 학교명으로 연결)
+  if(mm.cols.length){
+    const mS=colIndex(mm.cols,'학교'), mT=colIndex(mm.cols,'메모 내용'),
+          mBy=colIndex(mm.cols,'작성자'), mDt=colIndex(mm.cols,'타임스탬프');
+    mm.data.forEach(r=>{
+      const nm=(r[mS]||'').trim(); if(!nm||!byName[nm]) return;
+      const by=r[mBy]||''; if(skip(by)) return;
+      const text=(r[mT]||'').trim(); if(!text) return;
+      byName[nm].memo.push({ text, by:authorName(by), date:fmtDate(r[mDt]) });
+    });
+  }
 
   showState('ok');
   renderList();
@@ -364,7 +384,7 @@ function renderList(){
   const items=SCHOOLS.filter(s=>{
     const okF = filter==='all' || s.type===filter;
     const okQ = s.name.toLowerCase().includes(q.toLowerCase());
-    const hasInfo = s.parking.length>0 || s.food.length>0;
+    const hasInfo = s.parking.length>0 || s.food.length>0 || s.memo.length>0;
     // 검색 중이면 전체 학교에서 찾고, 검색 안 할 땐 정보 있는 학교만 표시
     const okInfo = q ? true : hasInfo;
     return okF && okQ && okInfo;
@@ -379,11 +399,12 @@ function renderList(){
       : `<div class="empty" style="margin-top:8px"><b>아직 등록된 정보가 없어요</b><span>학교 이름을 검색해 첫 주차·맛집 정보를 올려보세요.</span></div>`;
   }
   items.forEach(s=>{
-    const p=s.parking.length, f=s.food.length;
+    const p=s.parking.length, f=s.food.length, m=s.memo.length;
     let badges='';
+    if(m) badges+=`<span class="badge b-memo">${IC.memo} 특이사항 ${m}</span>`;
     if(p) badges+=`<span class="badge b-park">${IC.park} 주차 ${p}</span>`;
     if(f) badges+=`<span class="badge b-food">${IC.food} 맛집·카페 ${f}</span>`;
-    if(!p && !f) badges=`<span class="badge b-empty">아직 정보 없음</span>`;
+    if(!p && !f && !m) badges=`<span class="badge b-empty">아직 정보 없음</span>`;
     html+=`<div class="card" data-id="${s.id}">
         <div class="card-top">
           <div><div class="school-name">${s.name}</div>
@@ -407,6 +428,17 @@ function openDetail(id){
   document.getElementById('dMeta').textContent=[s.type,s.region,s.addr].filter(Boolean).join(' · ');
   const body=document.getElementById('dBody');
   let html='';
+
+  if(s.memo.length){
+    html+=`<div class="section"><div class="sec-head"><span class="ic ic-memo">${IC.memo}</span><span class="sec-title">특이사항</span><span class="sec-count">· ${s.memo.length}건</span></div>`;
+    s.memo.forEach(m=>{
+      html+=`<div class="entry">
+        <div class="memo-text">${esc(m.text)}</div>
+        <div class="author"><span class="dot">${(m.by||'?')[0]}</span>${esc(m.by)} 선생님${m.date?' · '+m.date:''}</div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
 
   html+=`<div class="section"><div class="sec-head"><span class="ic ic-park">${IC.park}</span><span class="sec-title">주차</span><span class="sec-count">${s.parking.length?`· ${s.parking.length}곳`:''}</span></div>`;
   if(s.parking.length){
@@ -457,7 +489,7 @@ document.getElementById('tabs').addEventListener('click',e=>{
   b.classList.add('on'); filter=b.dataset.f; renderList();
 });
 document.getElementById('fab').addEventListener('click',()=>{
-  if(!FORM_PARKING && !FORM_FOOD){
+  if(!FORM_PARKING && !FORM_FOOD && !FORM_MEMO){
     alert('구글 폼 주소를 넣으면 여기서 정보 입력 폼이 열립니다.');
     return;
   }
@@ -471,6 +503,7 @@ function openAddSheet(){
     <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px">구글 폼이 열립니다. 학교를 고르고 아는 것만 채우면 돼요.</div>
     <button data-u="${FORM_PARKING}" class="addbtn" style="width:100%;display:flex;align-items:center;gap:10px;background:var(--park-soft);color:var(--park);border:0;border-radius:12px;padding:15px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:10px">${IC.park} 주차 정보 추가</button>
     <button data-u="${FORM_FOOD}" class="addbtn" style="width:100%;display:flex;align-items:center;gap:10px;background:var(--food-soft);color:var(--food);border:0;border-radius:12px;padding:15px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:14px">${IC.food} 맛집·카페 추가</button>
+    <button data-u="${FORM_MEMO}" class="addbtn" style="width:100%;display:flex;align-items:center;gap:10px;background:var(--memo-soft);color:var(--memo);border:0;border-radius:12px;padding:15px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:14px">${IC.memo} 특이사항 추가</button>
     <button id="addCancel" style="width:100%;background:none;border:0;color:var(--muted);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;padding:6px">닫기</button>
   </div>`;
   document.body.appendChild(ov);
