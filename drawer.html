@@ -299,6 +299,21 @@ async function load(){
           iC=colIndex(t.cols,'분류'),       iG=colIndex(t.cols,'태그'),
           iM=colIndex(t.cols,'한줄 메모'),  iP=colIndex(t.cols,'가격');
 
+    // 열을 못 찾으면 화면엔 그냥 빈칸으로 보여서 원인을 알 수 없습니다.
+    // 무엇이 없고 시트에 실제로는 무엇이 있는지 콘솔에 남깁니다.
+    const need={'타임스탬프':iT,'공유자':iW,'링크':iL,'이름':iN,'분류':iC,'태그':iG,'한줄 메모':iM,'가격':iP};
+    const missing=Object.keys(need).filter(k=>need[k]<0);
+    if(missing.length){
+      console.warn('[공용 서랍] 못 찾은 열:', missing.join(', '));
+      console.warn('[공용 서랍] 시트에 있는 열:', t.cols.filter(Boolean).join(' | '));
+      if(iW<0) console.warn(
+        '[공용 서랍] 공유자 열이 없어 전부 «익명»으로 나옵니다.
+'+
+        '공개 시트의 «추천응답» 탭이 원본 응답 탭이 아니라 «추천공개» 탭을 가져오는지
+'+
+        'IMPORTRANGE 수식을 확인해 주세요. 이름 변환은 «추천공개» 탭에서 이뤄집니다.');
+    }
+
     ITEMS = t.data.map((r,i)=>{
       const link=cleanLink(r[iL]);
       const name=(r[iN]||'').trim();
